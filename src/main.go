@@ -2,13 +2,16 @@ package main
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -70,6 +73,7 @@ func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request
 func main() {
 	bindTo := getEnv("BIND_TO", "unix:///csi-data/csi.sock")
 	proxyTo := getEnv("PROXY_TO", "unix:///tmp/csi.sock")
+	waitForSocketTimeout, _ := strconv.Atoi(getEnv("PROXY_TO_INITIAL_TIMEOUT", "60"))
 
 	h2s := &http2.Server{}
 
@@ -84,15 +88,20 @@ func main() {
 
 	fmt.Printf("listening on [%s], proxy to [%s]\n", bindTo, proxyTo)
 
+	if waitForSocketTimeout > 0 && strings.HasPrefix(proxyTo, "unix://") {
+		proxyToFile := strings.TrimPrefix(proxyTo, "unix://")
+		err := WaitForSocket(proxyToFile, waitForSocketTimeout)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	if strings.HasPrefix(bindTo, "unix://") {
 		addr := strings.TrimPrefix(bindTo, "unix://")
 
-		fi, err := os.Stat(addr)
-		if err == nil {
-			if fi.Mode()&os.ModeSocket != 0 {
-				fmt.Printf("removing existing listen socket %s\n", addr)
-				os.Remove(addr)
-			}
+		if IsSocket(addr) {
+			fmt.Printf("removing existing listen socket %s\n", addr)
+			os.Remove(addr)
 		}
 
 		unixListener, err := net.Listen("unix", addr)
@@ -103,6 +112,45 @@ func main() {
 	} else {
 		if err := server.ListenAndServe(); err != nil {
 			panic(err)
+		}
+	}
+}
+
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func IsSocket(filename string) bool {
+	exists := FileExists(filename)
+	if !exists {
+		return false
+	}
+
+	fi, err := os.Stat(filename)
+	if err == nil {
+		if fi.Mode()&os.ModeSocket != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func WaitForSocket(filename string, timeout int) error {
+	for {
+		if IsSocket(filename) {
+			return nil
+		}
+		if timeout <= 0 {
+			return errors.New("timeout reached waiting for socket")
+		} else {
+			fmt.Printf("waiting for socket [%s] to appear, %ds remaining\n", filename, timeout)
+			time.Sleep(1 * time.Second)
+			timeout--
 		}
 	}
 }
