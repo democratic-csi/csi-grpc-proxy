@@ -31,9 +31,9 @@ func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request
 	fmt.Printf("request headers %v\n", req.Header)
 
 	director := func(req *http.Request) {
+		req.Header.Set("X-Forwarded-Host", req.Host)
 		req.URL.Scheme = "http"
 		req.URL.Host = "localhost"
-		req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
 		req.Host = "localhost"
 	}
 
