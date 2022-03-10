@@ -13,6 +13,8 @@ RUN go get \
 
 FROM alpine:3.15
 
+LABEL org.opencontainers.image.source https://github.com/democratic-csi/csi-grcp-proxy
+
 COPY --from=builder /go/bin/csi-grpc-proxy /usr/bin/csi-grpc-proxy
 
 CMD ["csi-grpc-proxy"]
