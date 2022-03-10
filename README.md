@@ -5,7 +5,7 @@
 The express purpose is to alleviate the issues associate with strict handling
 of `:authority` header by the various `grpc` server implementations. Several
 `grpc` clients send/set the file path as the `host` / `:authority` header when
-connecting via a `uds`. 
+connecting via a `uds`.
 
 - https://github.com/grpc/grpc-go/pull/3730/files
 - https://github.com/dotnet/aspnetcore/issues/18522
@@ -18,6 +18,7 @@ BIND_TO: sets the listening url as http or UDS address
 PROXY_TO: sets the upstream proxy as http or UDS address
 
 ## docker
+
 ```
 docker run --rm -d \
     -e BIND_TO=unix:///csi-data/csi.sock \
