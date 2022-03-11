@@ -10,8 +10,8 @@ non-conformat to the spec, thereforce server implementations reject the request
 outright (ie: `nginx`, `envoy`, `nodejs`, and anything `nghttp2`-based).
 
 This proxy always overrides the `host` / `:authority` header as `localhost`
-before sending the request upstream. Additionally `x-forwarded-host` header is
-set to the original value, otherwise the request is unaltered.
+before sending the request upstream. Additionally the `x-forwarded-host` header
+is set to the original value, otherwise the request is unaltered.
 
 - https://github.com/grpc/grpc-go/pull/3730/files
 - https://github.com/dotnet/aspnetcore/issues/18522
