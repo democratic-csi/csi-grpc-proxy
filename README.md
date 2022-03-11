@@ -33,11 +33,11 @@ docker run --rm -d \
     democraticcsi/csi-grpc-poxy
 ```
 
-# Development
+# development
 
 ```
 cd src/
-go mod init main
+go mod init csi-grpc-proxy
 go get
 BIND_TO="unix:///tmp/csi.sock" PROXY_TO="unix:///tmp/csi.sock.internal" go run ./main.go
 
@@ -49,7 +49,7 @@ go tool dist list
 GOOS=linux GOARCH=arm64 go build -o prepnode_arm64
 ```
 
-# Links
+# links
 
 - https://github.com/Zetanova/grpc-proxy
 - https://pkg.go.dev/net/http#Request
