@@ -6,7 +6,7 @@ The express purpose is to alleviate the issues associated with the strict
 handling of the `:authority` header by the various `grpc` server
 implementations. Several `grpc` clients send/set the `uds` file path as the
 `host` / `:authority` header when connecting via `uds`, which is (seemingly)
-non-conformat to the spec, thereforce server implementations reject the request
+non-conformat to the spec, therefore server implementations reject the request
 outright (ie: `nginx`, `envoy`, `nodejs`, and anything `nghttp2`-based).
 
 This proxy always overrides the `host` / `:authority` header as `localhost`
