@@ -46,7 +46,13 @@ go fmt ./
 CGO_ENABLED=0 go build
 
 go tool dist list
-GOOS=linux GOARCH=arm64 go build -o prepnode_arm64
+GOOS=linux GOARCH=arm64 go build -o csi-grpc-proxy
+
+
+# upgrade go version
+go mod edit -go 1.18
+# edit Dockerfile as appropriate
+# edit github-release.yaml as appropriate
 ```
 
 # links
