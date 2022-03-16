@@ -27,10 +27,11 @@ required environment vars:
 ## docker
 
 ```
+docker pull democraticcsi/csi-grpc-proxy
 docker run --rm -d \
     -e BIND_TO=unix:///csi-data/csi.sock \
     -e PROXY_TO=unix:///tmp/csi.sock \
-    democraticcsi/csi-grpc-poxy
+    democraticcsi/csi-grpc-proxy
 ```
 
 # development
@@ -47,7 +48,6 @@ CGO_ENABLED=0 go build
 
 go tool dist list
 GOOS=linux GOARCH=arm64 go build -o csi-grpc-proxy
-
 
 # upgrade go version
 go mod edit -go 1.18
