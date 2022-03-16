@@ -1,9 +1,6 @@
-FROM golang:1.18-alpine3.15 as builder
+FROM golang:1.18-bullseye as builder
 
-RUN apk add --no-cache \
-    build-base \
-    git \
-    ca-certificates
+RUN apt-get install -y git ca-certificates
 
 COPY ./src/ $GOPATH/src/csi-grpc-proxy/
 
@@ -14,7 +11,7 @@ RUN go get \
 
 FROM alpine:3.15
 
-LABEL org.opencontainers.image.source https://github.com/democratic-csi/csi-grcp-proxy
+LABEL org.opencontainers.image.source https://github.com/democratic-csi/csi-grpc-proxy
 
 COPY --from=builder /go/bin/csi-grpc-proxy /usr/bin/csi-grpc-proxy
 
