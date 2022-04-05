@@ -25,11 +25,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// Serve a reverse proxy for a given url
-func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request) {
-	fmt.Printf("request %s %s %s\n", req.Method, req.URL, req.Proto)
-	fmt.Printf("request headers %v\n", req.Header)
-
+// Get proxy instance
+func getProxy(target string) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		req.Header.Set("X-Forwarded-Host", req.Host)
 		req.URL.Scheme = "http"
@@ -66,8 +63,7 @@ func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request
 		Transport: transport,
 	}
 
-	// Note that ServeHttp is non blocking and uses a go routine under the hood
-	proxy.ServeHTTP(res, req)
+	return proxy
 }
 
 func main() {
@@ -77,8 +73,12 @@ func main() {
 
 	h2s := &http2.Server{}
 
+	proxy := getProxy(proxyTo)
 	handler := http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		serveReverseProxy(proxyTo, res, req)
+		fmt.Printf("request %s %s %s\n", req.Method, req.URL, req.Proto)
+		fmt.Printf("request headers %v\n", req.Header)
+
+		proxy.ServeHTTP(res, req)
 	})
 
 	server := &http.Server{
