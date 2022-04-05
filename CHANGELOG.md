@@ -1,3 +1,11 @@
+# v0.4.2
+
+Released 2022-04-05
+
+- reuse existing `proxy` instance to have better resource usage both on the
+  server itself and to the upstream (prevents new sessions being created on the
+  upstream for each request)
+
 # v0.4.1
 
 Released 2022-03-15
