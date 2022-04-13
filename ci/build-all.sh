@@ -23,10 +23,27 @@ for target in $(go tool dist list);do
   export GOOS=$(echo $target | cut -d "/" -f1)
   export GOARCH=$(echo $target | cut -d "/" -f2)
 
-  if [ "${GOOS}" != "linux" ];then
+  BUILD=0
+  suffix=""
+  if [ "${GOOS}" == "freebsd" ];then
+    BUILD=1
+  fi
+  if [ "${GOOS}" == "darwin" ];then
+    BUILD=1
+  fi
+  if [ "${GOOS}" == "linux" ];then
+    BUILD=1
+  fi
+  if [ "${GOOS}" == "windows" ];then
+    suffix=".exe"
+    BUILD=1
+  fi
+
+  if [[ "${BUILD}" -ne 1 ]];then
     continue
   fi
-  binary="${BINARY_NAME}-${BINARY_VERSION}-${GOOS}-${GOARCH}"
+
+  binary="${BINARY_NAME}-${BINARY_VERSION}-${GOOS}-${GOARCH}${suffix}"
   echo "building ${target} as ${binary}"
   go build -o ../builds/${binary}
 done

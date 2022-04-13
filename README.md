@@ -22,7 +22,15 @@ is set to the original value, otherwise the request is unaltered.
 required environment vars:
 
 - `BIND_TO`: sets the listening url as http or UDS address
+  - `unix:///path/to/socket`
+  - `localhost:5216`
+  - `0.0.0.0:5216`
 - `PROXY_TO`: sets the upstream proxy as http or UDS address
+  - `unix:///path/to/socket`
+  - `localhost:5216`
+- `REWRITE_HOST`: enables host header rewriting (primary purpose of the proxy)
+  - `1`: enabled, default
+  - `0`: disabled
 
 ## docker
 
@@ -40,10 +48,15 @@ docker run --rm -d \
 cd src/
 go mod init csi-grpc-proxy
 go get
-BIND_TO="unix:///tmp/csi.sock" PROXY_TO="unix:///tmp/csi.sock.internal" go run ./main.go
+BIND_TO="unix:///tmp/csi.sock" PROXY_TO="unix:///tmp/csi.sock.internal" go run .
 
+# add dep
+go get github.com/Microsoft/go-winio
+
+# format
 go fmt ./
 
+# build
 CGO_ENABLED=0 go build
 
 go tool dist list
@@ -55,8 +68,19 @@ go mod edit -go 1.18
 # edit github-release.yaml as appropriate
 ```
 
+# TODO
+
+- graceful shutdown (handle signals and terminate properly in-flight requests)
+  - https://rafallorenz.com/go/handle-signals-to-graceful-shutdown-http-server/
+  - https://medium.com/honestbee-tw-engineer/gracefully-shutdown-in-go-http-server-5f5e6b83da5a
+  - https://gist.github.com/embano1/e0bf49d24f1cdd07cffad93097c04f0a
+
 # links
 
 - https://github.com/Zetanova/grpc-proxy
 - https://pkg.go.dev/net/http#Request
 - https://opensource.com/article/21/1/go-cross-compiling
+- https://www.digitalocean.com/community/tutorials/building-go-applications-for-different-operating-systems-and-architectures
+- https://github.com/gesellix/go-npipe
+- https://github.com/gesellix/go-npipe/blob/master/windows/Dockerfile
+- https://github.com/microsoft/go-winio
