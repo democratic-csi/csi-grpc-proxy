@@ -221,7 +221,7 @@ func FileExists(filename string) bool {
 		}
 		panic(err)
 	}
-	
+
 	return !info.IsDir()
 }
 

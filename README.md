@@ -23,10 +23,12 @@ required environment vars:
 
 - `BIND_TO`: sets the listening url as http or UDS address
   - `unix:///path/to/socket`
+  - `winio://\\.\\pipe\\foo`
   - `localhost:5216`
   - `0.0.0.0:5216`
 - `PROXY_TO`: sets the upstream proxy as http or UDS address
   - `unix:///path/to/socket`
+  - `winio://\\.\\pipe\\csi-proxy-disk-v1`
   - `localhost:5216`
 - `REWRITE_HOST`: enables host header rewriting (primary purpose of the proxy)
   - `1`: enabled, default
