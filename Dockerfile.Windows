@@ -1,4 +1,4 @@
-# docker build --build-arg BASE_TAG=1809 -t foobar -f .\Dockerfile.windows .
+# docker build --build-arg BASE_TAG=1809 -t foobar -f .\Dockerfile.Windows .
 #
 # base tags:
 # - ltsc2022
