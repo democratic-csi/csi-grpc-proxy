@@ -23,16 +23,20 @@ required environment vars:
 
 - `BIND_TO`: sets the listening url as http or UDS address
   - `unix:///path/to/socket`
-  - `winio://\\.\\pipe\\foo`
-  - `localhost:5216`
-  - `0.0.0.0:5216`
+  - `npipe:////./pipe/foo`
+  - `tcp://localhost:5216`
+  - `tcp://0.0.0.0:5216`
 - `PROXY_TO`: sets the upstream proxy as http or UDS address
   - `unix:///path/to/socket`
-  - `winio://\\.\\pipe\\csi-proxy-disk-v1`
-  - `localhost:5216`
+  - `npipe:////./pipe/csi.sock`
+  - `tcp://localhost:5216`
 - `REWRITE_HOST`: enables host header rewriting (primary purpose of the proxy)
   - `1`: enabled, default
   - `0`: disabled
+- `PROXY_TO_INITIAL_TIMEOUT`: how long (seconds) to wait for the upstream proxy
+  to be available
+  - `60`: default
+  - `0`: disable
 
 ## docker
 
@@ -76,6 +80,7 @@ go mod edit -go 1.18
   - https://rafallorenz.com/go/handle-signals-to-graceful-shutdown-http-server/
   - https://medium.com/honestbee-tw-engineer/gracefully-shutdown-in-go-http-server-5f5e6b83da5a
   - https://gist.github.com/embano1/e0bf49d24f1cdd07cffad93097c04f0a
+- https://github.com/golang/go/issues/33357
 
 # links
 
