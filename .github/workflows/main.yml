@@ -42,3 +42,53 @@ jobs:
           GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
           DOCKER_CLI_EXPERIMENTAL: enabled
           DOCKER_BUILD_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
+
+  build-go-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
+      - shell: bash
+        name: go build
+        run: |
+          ci/build-windows.sh
+      - name: upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: bin
+          path: bin/
+          retention-days: 7
+
+  build-docker-windows:
+    needs:
+      - build-go-windows
+      # require this due to modifying the manifest
+      - build-docker
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019, windows-2022]
+        include:
+        - os: windows-2019
+          base_tag: "1809"
+          file: Dockerfile.Windows
+        - os: windows-2022
+          base_tag: ltsc2022
+          file: Dockerfile.Windows
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: bin
+      - name: docker build
+        run: |
+          docker build -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base }} .
+
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
+          DOCKER_CLI_EXPERIMENTAL: enabled
