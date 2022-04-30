@@ -95,7 +95,7 @@ jobs:
           name: builds
       - name: docker build
         run: |
-          docker build -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base }} .
+          docker build -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} .
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
