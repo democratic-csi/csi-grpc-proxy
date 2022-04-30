@@ -93,6 +93,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: builds
+          path: builds/
       - name: docker build
         run: |
           docker build -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} .
