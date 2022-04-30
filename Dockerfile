@@ -23,7 +23,7 @@ RUN ls -l /builds
 RUN case ${TARGETPLATFORM} in \
         "linux/amd64")   BINARY=csi-grpc-proxy-docker-image-build-linux-amd64   ;; \
         "linux/arm64")   BINARY=csi-grpc-proxy-docker-image-build-linux-arm64   ;; \
-        "linux/arm/v7")  BINARY=csi-grpc-proxy-docker-image-build-linux-amd     ;; \
+        "linux/arm/v7")  BINARY=csi-grpc-proxy-docker-image-build-linux-arm     ;; \
         "linux/ppc64le") BINARY=csi-grpc-proxy-docker-image-build-linux-ppc64le ;; \
         "linux/s390x")   BINARY=csi-grpc-proxy-docker-image-build-linux-s390x   ;; \
     esac \
