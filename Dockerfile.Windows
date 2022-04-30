@@ -1,0 +1,18 @@
+# docker build --build-arg BASE_TAG=1809 -t foobar -f .\Dockerfile.windows .
+#
+# base tags:
+# - ltsc2022
+# - 1809
+#
+# manifest details:
+# - architecture: amd64
+# - os: windows
+# - version: 1809|ltsc2022
+ARG BASE_TAG
+
+FROM mcr.microsoft.com/windows/nanoserver:${BASE_TAG}
+
+LABEL org.opencontainers.image.source https://github.com/democratic-csi/csi-grpc-proxy
+
+COPY bin/csi-grpc-proxy.exe C:/bin/
+CMD c:\\bin\\csi-grpc-proxy.exe

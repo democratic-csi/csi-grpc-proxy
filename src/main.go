@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -52,12 +53,13 @@ func getProxy(target string) *httputil.ReverseProxy {
 	} else if strings.HasPrefix(target, "npipe://") {
 		addr := strings.TrimPrefix(target, "npipe://")
 		dialer = getWinioDialer(addr)
-	} else {
-		url, _ := url.Parse(target)
-		addr := url.Host
+	} else if strings.HasPrefix(target, "tcp://") {
+		addr := strings.TrimPrefix(target, "tcp://")
 		dialer = func() (net.Conn, error) {
 			return net.Dial("tcp", addr)
 		}
+	} else {
+		panic(fmt.Errorf("invalid PROXY_TO: %s", target))
 	}
 
 	transport := &http2.Transport{
@@ -147,9 +149,26 @@ func run() int {
 
 	log.Printf("listening on [%s], proxy to [%s]\n", bindTo, proxyTo)
 
-	if waitForSocketTimeout > 0 && strings.HasPrefix(proxyTo, "unix://") {
-		proxyToFile := strings.TrimPrefix(proxyTo, "unix://")
-		err := WaitForSocket(proxyToFile, waitForSocketTimeout)
+	if waitForSocketTimeout > 0 {
+		var err error
+		if strings.HasPrefix(proxyTo, "unix://") {
+			proxyToFile := strings.TrimPrefix(proxyTo, "unix://")
+			if runtime.GOOS == "windows" {
+				err = WaitForDial("unix", proxyToFile, waitForSocketTimeout)
+			} else {
+				err = WaitForSocket(proxyToFile, waitForSocketTimeout)
+			}
+
+		} else if strings.HasPrefix(proxyTo, "npipe://") {
+			proxyToFile := strings.TrimPrefix(proxyTo, "npipe://")
+			err = WaitForFile(proxyToFile, waitForSocketTimeout)
+		} else if strings.HasPrefix(proxyTo, "tcp://") {
+			proxyToFile := strings.TrimPrefix(proxyTo, "tcp://")
+			err = WaitForDial("tcp", proxyToFile, waitForSocketTimeout)
+		} else {
+			panic(fmt.Errorf("invalid PROXY_TO: %s", proxyTo))
+		}
+
 		if err != nil {
 			panic(err)
 		}
@@ -181,13 +200,16 @@ func run() int {
 			defer winioListener.Close()
 
 			server.Serve(winioListener)
-		} else {
-			server.Addr = bindTo
+		} else if strings.HasPrefix(bindTo, "tcp://") {
+			addr := strings.TrimPrefix(bindTo, "tcp://")
+			server.Addr = addr
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				panic(err)
 			} else {
 				log.Println("tcp server gracefully stopped listening")
 			}
+		} else {
+			panic(fmt.Errorf("invalid BIND_TO: %s", bindTo))
 		}
 	}()
 
@@ -250,6 +272,39 @@ func WaitForSocket(filename string, timeout int) error {
 			return errors.New("timeout reached waiting for socket")
 		} else {
 			log.Printf("waiting for socket [%s] to appear, %ds remaining\n", filename, timeout)
+			time.Sleep(1 * time.Second)
+			timeout--
+		}
+	}
+}
+
+func WaitForFile(filename string, timeout int) error {
+	for {
+		if FileExists(filename) {
+			return nil
+		}
+		if timeout <= 0 {
+			return errors.New("timeout reached waiting for file")
+		} else {
+			log.Printf("waiting for file [%s] to appear, %ds remaining\n", filename, timeout)
+			time.Sleep(1 * time.Second)
+			timeout--
+		}
+	}
+}
+
+func WaitForDial(network, filename string, timeout int) error {
+	for {
+		conn, err := net.DialTimeout(network, filename, 1*time.Second)
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+
+		if timeout <= 0 {
+			return errors.New("timeout reached waiting for dial")
+		} else {
+			log.Printf("waiting for successful dial [%s], %ds remaining\n", filename, timeout)
 			time.Sleep(1 * time.Second)
 			timeout--
 		}
