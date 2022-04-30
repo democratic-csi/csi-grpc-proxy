@@ -49,8 +49,8 @@ func getProxy(target string) *httputil.ReverseProxy {
 		dialer = func() (net.Conn, error) {
 			return net.Dial("unix", addr)
 		}
-	} else if strings.HasPrefix(target, "winio://") {
-		addr := strings.TrimPrefix(target, "winio://")
+	} else if strings.HasPrefix(target, "npipe://") {
+		addr := strings.TrimPrefix(target, "npipe://")
 		dialer = getWinioDialer(addr)
 	} else {
 		url, _ := url.Parse(target)
@@ -171,8 +171,8 @@ func run() int {
 			defer unixListener.Close()
 
 			server.Serve(unixListener)
-		} else if strings.HasPrefix(bindTo, "winio://") {
-			addr := strings.TrimPrefix(bindTo, "winio://")
+		} else if strings.HasPrefix(bindTo, "npipe://") {
+			addr := strings.TrimPrefix(bindTo, "npipe://")
 
 			winioListener, err := getWinioListener(addr)
 			if err != nil {
