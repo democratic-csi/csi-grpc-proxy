@@ -30,7 +30,7 @@ jobs:
           ci/build-all.sh
         env:
           BINARY_VERSION: docker-image-build
-      - name: upload build
+      - name: upload builds
         uses: actions/upload-artifact@v2
         with:
           name: builds
@@ -48,6 +48,9 @@ jobs:
           name: builds
       - name: docker build
         run: |
+          pwd
+          ls -l
+          ls -l builds/
           export ARCH=$([ $(uname -m) = "x86_64" ] && echo "amd64" || echo "arm64")
           mkdir -p ~/.docker/cli-plugins/
           wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-${ARCH}

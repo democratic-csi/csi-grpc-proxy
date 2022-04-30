@@ -13,9 +13,11 @@ RUN printf "I'm building for TARGETPLATFORM=${TARGETPLATFORM}" \
     && printf "With uname -s : " && uname -s \
     && printf "and  uname -m : " && uname -mm
 
-RUN mkdir -p /binary
+RUN mkdir -p /binary; mkdir -p /builds;
 
 COPY builds /builds
+
+RUN ls -l /builds
 
 # linux/amd64,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
 RUN case ${TARGETPLATFORM} in \
@@ -27,6 +29,8 @@ RUN case ${TARGETPLATFORM} in \
     esac \
   && cp /builds/${BINARY} /binary/csi-grpc-proxy \
   && chmod +x /binary/csi-grpc-proxy
+
+RUN ls -l /binary
 
 FROM alpine:3.15
 
