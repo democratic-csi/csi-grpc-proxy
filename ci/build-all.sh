@@ -9,15 +9,18 @@ cd src
 export CGO_ENABLED=0
 export BINARY_NAME="csi-grpc-proxy"
 
-if [[ -z "${GITHUB_REF}" ]]; then
-  : "${BINARY_VERSION:=dev}"
-else
-  if [[ $GITHUB_REF == refs/tags/* ]]; then
-    BINARY_VERSION=${GITHUB_REF#refs/tags/}
+if [[ -z "${BINARY_VERSION}" ]]; then
+  if [[ -z "${GITHUB_REF}" ]]; then
+    : "${BINARY_VERSION:=dev}"
   else
-    BINARY_VERSION=${GITHUB_REF#refs/heads/}
+    if [[ $GITHUB_REF == refs/tags/* ]]; then
+      BINARY_VERSION=${GITHUB_REF#refs/tags/}
+    else
+      BINARY_VERSION=${GITHUB_REF#refs/heads/}
+    fi
   fi
 fi
+
 
 for target in $(go tool dist list);do
   export GOOS=$(echo $target | cut -d "/" -f1)
