@@ -194,41 +194,32 @@ func run() int {
 	}
 
 	go func(network, addr string) {
+		var err error
+		var listener net.Listener
 		switch network {
 		case "unix":
 			if IsSocket(addr) {
 				log.Printf("removing existing listen socket %s\n", addr)
 				os.Remove(addr)
 			}
-
-			unixListener, err := net.Listen("unix", addr)
-			if err != nil {
-				panic(err)
-			}
-			defer unixListener.Close()
-
-			server.Serve(unixListener)
+			listener, err = net.Listen(network, addr)
 		case "tcp":
 			server.Addr = addr
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				panic(err)
-			} else {
-				log.Println("tcp server gracefully stopped listening")
-			}
+			listener, err = net.Listen(network, addr)
 		case "npipe":
-			winioListener, err := getWinioListener(addr)
-			if err != nil {
-				panic(err)
-			}
-			defer winioListener.Close()
-
-			server.Serve(winioListener)
+			listener, err = getWinioListener(addr)
 		default:
 			panic(fmt.Errorf("invalid BIND_TO nextwork: %s", network))
 		}
-	}(bindToNetwork, bindToAddr)
 
-	log.Printf("BIND_TO [%s] is ready!", bindTo)
+		if err != nil {
+			panic(err)
+		}
+		defer listener.Close()
+
+		log.Printf("BIND_TO [%s] is ready!", bindTo)
+		server.Serve(listener)
+	}(bindToNetwork, bindToAddr)
 
 	<-signalChan
 	log.Print("signal caught, shutting down..\n")
