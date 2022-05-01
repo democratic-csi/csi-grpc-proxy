@@ -114,6 +114,8 @@ func run() int {
 		panic(fmt.Errorf("invalid PROXY_TO network: %s", proxyToNetwork))
 	}
 
+	log.Printf("BIND_TO [%s], PROXY_TO [%s]\n", bindTo, proxyTo)
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(
 		signalChan,
@@ -165,10 +167,8 @@ func run() int {
 	//defer server.Shutdown(ctx)
 	//defer server.Close()
 
-	log.Printf("listening on [%s], proxy to [%s]\n", bindTo, proxyTo)
-
 	if waitForSocketTimeout > 0 {
-		go func(network, addr string) {
+		func(network, addr string) {
 			var err error
 			switch network {
 			case "unix":
@@ -227,6 +227,8 @@ func run() int {
 			panic(fmt.Errorf("invalid BIND_TO nextwork: %s", network))
 		}
 	}(bindToNetwork, bindToAddr)
+
+	log.Printf("BIND_TO [%s] is ready!", bindTo)
 
 	<-signalChan
 	log.Print("signal caught, shutting down..\n")
