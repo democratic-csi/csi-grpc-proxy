@@ -29,8 +29,10 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+var VALID_NETWORKS = [...]string{"unix", "tcp", "npipe"}
+
 // Get proxy instance
-func getProxy(target string) *httputil.ReverseProxy {
+func getProxy(network, addr string) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// must rewrite scheme regardless
 		req.URL.Scheme = "http"
@@ -45,21 +47,19 @@ func getProxy(target string) *httputil.ReverseProxy {
 
 	var dialer func() (net.Conn, error)
 
-	if strings.HasPrefix(target, "unix://") {
-		addr := strings.TrimPrefix(target, "unix://")
+	switch network {
+	case "unix":
 		dialer = func() (net.Conn, error) {
-			return net.Dial("unix", addr)
+			return net.Dial(network, addr)
 		}
-	} else if strings.HasPrefix(target, "npipe://") {
-		addr := strings.TrimPrefix(target, "npipe://")
+	case "tcp":
+		dialer = func() (net.Conn, error) {
+			return net.Dial(network, addr)
+		}
+	case "npipe":
 		dialer = getWinioDialer(addr)
-	} else if strings.HasPrefix(target, "tcp://") {
-		addr := strings.TrimPrefix(target, "tcp://")
-		dialer = func() (net.Conn, error) {
-			return net.Dial("tcp", addr)
-		}
-	} else {
-		panic(fmt.Errorf("invalid PROXY_TO: %s", target))
+	default:
+		panic(fmt.Errorf("invalid PROXY_TO nextwork: %s", network))
 	}
 
 	transport := &http2.Transport{
@@ -67,7 +67,7 @@ func getProxy(target string) *httputil.ReverseProxy {
 		AllowHTTP: true,
 		// Pretend we are dialing a TLS endpoint. (Note, we ignore the passed tls.Config)
 		DialTLS: func(network, addr string, _ *tls.Config) (net.Conn, error) {
-			log.Printf("Dialing upstream: %s\n", target)
+			log.Printf("Dialing upstream: %s://%s\n", network, addr)
 			return dialer()
 		},
 	}
@@ -96,6 +96,24 @@ func run() int {
 	proxyTo := getEnv("PROXY_TO", "unix:///tmp/csi.sock")
 	waitForSocketTimeout, _ := strconv.Atoi(getEnv("PROXY_TO_INITIAL_TIMEOUT", "60"))
 
+	bindToNetwork, bindToAddr, found := strings.Cut(bindTo, "://")
+	if !found {
+		panic(fmt.Errorf("invalid BIND_TO: %s", bindTo))
+	}
+
+	if !StringInSlice(bindToNetwork, VALID_NETWORKS[:]) {
+		panic(fmt.Errorf("invalid BIND_TO network: %s", bindToNetwork))
+	}
+
+	proxyToNetwork, proxyToAddr, found := strings.Cut(proxyTo, "://")
+	if !found {
+		panic(fmt.Errorf("invalid PROXY_TO: %s", proxyTo))
+	}
+
+	if !StringInSlice(proxyToNetwork, VALID_NETWORKS[:]) {
+		panic(fmt.Errorf("invalid PROXY_TO network: %s", proxyToNetwork))
+	}
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(
 		signalChan,
@@ -107,7 +125,7 @@ func run() int {
 
 	h2s := &http2.Server{}
 
-	proxy := getProxy(proxyTo)
+	proxy := getProxy(proxyToNetwork, proxyToAddr)
 	handler := http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		log.Printf("request (%s://%s) %s %s %s\n", req.URL.Scheme, req.Host, req.Method, req.URL, req.Proto)
 		log.Printf("request headers %v\n", req.Header)
@@ -150,34 +168,34 @@ func run() int {
 	log.Printf("listening on [%s], proxy to [%s]\n", bindTo, proxyTo)
 
 	if waitForSocketTimeout > 0 {
-		var err error
-		if strings.HasPrefix(proxyTo, "unix://") {
-			proxyToFile := strings.TrimPrefix(proxyTo, "unix://")
-			if runtime.GOOS == "windows" {
-				err = WaitForDial("unix", proxyToFile, waitForSocketTimeout)
-			} else {
-				err = WaitForSocket(proxyToFile, waitForSocketTimeout)
+		go func(network, addr string) {
+			var err error
+			switch network {
+			case "unix":
+				if runtime.GOOS == "windows" {
+					err = WaitForDial(network, addr, waitForSocketTimeout)
+				} else {
+					err = WaitForSocket(addr, waitForSocketTimeout)
+				}
+			case "tcp":
+				err = WaitForDial(network, addr, waitForSocketTimeout)
+			case "npipe":
+				err = WaitForFile(addr, waitForSocketTimeout)
+			default:
+				panic(fmt.Errorf("invalid PROXY_TO nextwork: %s", network))
 			}
 
-		} else if strings.HasPrefix(proxyTo, "npipe://") {
-			proxyToFile := strings.TrimPrefix(proxyTo, "npipe://")
-			err = WaitForFile(proxyToFile, waitForSocketTimeout)
-		} else if strings.HasPrefix(proxyTo, "tcp://") {
-			proxyToFile := strings.TrimPrefix(proxyTo, "tcp://")
-			err = WaitForDial("tcp", proxyToFile, waitForSocketTimeout)
-		} else {
-			panic(fmt.Errorf("invalid PROXY_TO: %s", proxyTo))
-		}
+			if err != nil {
+				panic(err)
+			}
 
-		if err != nil {
-			panic(err)
-		}
+			log.Printf("PROXY_TO [%s] is ready!", proxyTo)
+		}(proxyToNetwork, proxyToAddr)
 	}
 
-	go func() {
-		if strings.HasPrefix(bindTo, "unix://") {
-			addr := strings.TrimPrefix(bindTo, "unix://")
-
+	go func(network, addr string) {
+		switch network {
+		case "unix":
 			if IsSocket(addr) {
 				log.Printf("removing existing listen socket %s\n", addr)
 				os.Remove(addr)
@@ -190,9 +208,14 @@ func run() int {
 			defer unixListener.Close()
 
 			server.Serve(unixListener)
-		} else if strings.HasPrefix(bindTo, "npipe://") {
-			addr := strings.TrimPrefix(bindTo, "npipe://")
-
+		case "tcp":
+			server.Addr = addr
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				panic(err)
+			} else {
+				log.Println("tcp server gracefully stopped listening")
+			}
+		case "npipe":
 			winioListener, err := getWinioListener(addr)
 			if err != nil {
 				panic(err)
@@ -200,18 +223,10 @@ func run() int {
 			defer winioListener.Close()
 
 			server.Serve(winioListener)
-		} else if strings.HasPrefix(bindTo, "tcp://") {
-			addr := strings.TrimPrefix(bindTo, "tcp://")
-			server.Addr = addr
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				panic(err)
-			} else {
-				log.Println("tcp server gracefully stopped listening")
-			}
-		} else {
-			panic(fmt.Errorf("invalid BIND_TO: %s", bindTo))
+		default:
+			panic(fmt.Errorf("invalid BIND_TO nextwork: %s", network))
 		}
-	}()
+	}(bindToNetwork, bindToAddr)
 
 	<-signalChan
 	log.Print("signal caught, shutting down..\n")
@@ -245,6 +260,15 @@ func FileExists(filename string) bool {
 	}
 
 	return !info.IsDir()
+}
+
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func IsSocket(filename string) bool {
