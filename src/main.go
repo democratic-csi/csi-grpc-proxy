@@ -218,7 +218,12 @@ func run() int {
 		defer listener.Close()
 
 		log.Printf("BIND_TO [%s] is ready!", bindTo)
-		server.Serve(listener)
+		err = server.Serve(listener)
+		if err != nil && err != http.ErrServerClosed {
+			panic(err)
+		} else {
+			log.Println("server gracefully stopped listening")
+		}
 	}(bindToNetwork, bindToAddr)
 
 	<-signalChan
