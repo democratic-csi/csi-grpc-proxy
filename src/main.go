@@ -116,17 +116,7 @@ func run() int {
 
 	log.Printf("BIND_TO [%s], PROXY_TO [%s]\n", bindTo, proxyTo)
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(
-		signalChan,
-		syscall.SIGTERM,
-		syscall.SIGHUP,  // kill -SIGHUP XXXX
-		syscall.SIGINT,  // kill -SIGINT XXXX or Ctrl+c
-		syscall.SIGQUIT, // kill -SIGQUIT XXXX
-	)
-
 	h2s := &http2.Server{}
-
 	proxy := getProxy(proxyToNetwork, proxyToAddr)
 	handler := http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		log.Printf("request (%s://%s) %s %s %s\n", req.URL.Scheme, req.Host, req.Method, req.URL, req.Proto)
@@ -166,6 +156,31 @@ func run() int {
 	//})
 	//defer server.Shutdown(ctx)
 	//defer server.Close()
+	
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(
+		signalChan,
+		syscall.SIGTERM,
+		syscall.SIGHUP,  // kill -SIGHUP XXXX
+		syscall.SIGINT,  // kill -SIGINT XXXX or Ctrl+c
+		syscall.SIGQUIT, // kill -SIGQUIT XXXX
+	)
+
+	go func() {
+		<-signalChan
+		log.Print("signal caught, shutting down..\n")
+		//log.Printf("server conns %v\n", server.)
+
+		// TODO: this does not seem to actually wait for in-flight requests
+		// https://github.com/golang/go/issues/17721
+		if err := server.Shutdown(ctx); err != nil {
+			log.Printf("server shutdown error: %v\n", err)
+			os.Exit(1)
+		} else {
+			log.Printf("graceful shutdown complete\n")
+			os.Exit(0)
+		}
+	}()
 
 	if waitForSocketTimeout > 0 {
 		func(network, addr string) {
@@ -225,19 +240,6 @@ func run() int {
 			log.Println("server gracefully stopped listening")
 		}
 	}(bindToNetwork, bindToAddr)
-
-	<-signalChan
-	log.Print("signal caught, shutting down..\n")
-	//log.Printf("server conns %v\n", server.)
-
-	// TODO: this does not seem to actually wait for in-flight requests
-	// https://github.com/golang/go/issues/17721
-	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("server shutdown error: %v\n", err)
-		return 1
-	} else {
-		log.Printf("graceful shutdown complete\n")
-	}
 
 	return 0
 }
@@ -315,9 +317,9 @@ func WaitForFile(filename string, timeout int) error {
 	}
 }
 
-func WaitForDial(network, filename string, timeout int) error {
+func WaitForDial(network, addr string, timeout int) error {
 	for {
-		conn, err := net.DialTimeout(network, filename, 1*time.Second)
+		conn, err := net.DialTimeout(network, addr, 1*time.Second)
 		if err == nil {
 			conn.Close()
 			return nil
@@ -326,7 +328,7 @@ func WaitForDial(network, filename string, timeout int) error {
 		if timeout <= 0 {
 			return errors.New("timeout reached waiting for dial")
 		} else {
-			log.Printf("waiting for successful dial [%s], %ds remaining\n", filename, timeout)
+			log.Printf("waiting for successful dial [%s://%s], %ds remaining\n", network, addr, timeout)
 			time.Sleep(1 * time.Second)
 			timeout--
 		}
