@@ -86,6 +86,9 @@ func getProxy(network, addr string) *httputil.ReverseProxy {
 }
 
 func run() int {
+	finished := make(chan bool)
+	var returncode int = 0
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
 		//log.Println("inline defer executing")
@@ -156,7 +159,7 @@ func run() int {
 	//})
 	//defer server.Shutdown(ctx)
 	//defer server.Close()
-	
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(
 		signalChan,
@@ -175,11 +178,13 @@ func run() int {
 		// https://github.com/golang/go/issues/17721
 		if err := server.Shutdown(ctx); err != nil {
 			log.Printf("server shutdown error: %v\n", err)
-			os.Exit(1)
+			returncode = 1
 		} else {
 			log.Printf("graceful shutdown complete\n")
-			os.Exit(0)
+			returncode = 0
 		}
+
+		finished <- true
 	}()
 
 	if waitForSocketTimeout > 0 {
@@ -241,7 +246,9 @@ func run() int {
 		}
 	}(bindToNetwork, bindToAddr)
 
-	return 0
+	<-finished
+
+	return returncode
 }
 
 func main() {
