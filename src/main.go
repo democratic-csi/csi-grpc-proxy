@@ -29,7 +29,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-var VALID_NETWORKS = [...]string{"unix", "tcp", "npipe"}
+var VALID_NETWORKS = [...]string{"unix", "tcp", "tcp4", "tcp6", "npipe"}
 
 // Get proxy instance
 func getProxy(network, addr string) *httputil.ReverseProxy {
@@ -38,21 +38,31 @@ func getProxy(network, addr string) *httputil.ReverseProxy {
 		req.URL.Scheme = "http"
 
 		rewriteHost := getEnv("REWRITE_HOST", "1")
+		rewriteHostHostname := getEnv("REWRITE_HOST_HOSTNAME", "localhost")
+
+		// rewrite host regardless of value
 		if rewriteHost == "1" {
 			req.Header.Set("X-Forwarded-Host", req.Host)
-			req.URL.Host = "localhost"
-			req.Host = "localhost"
+			req.URL.Host = rewriteHostHostname
+			req.Host = rewriteHostHostname
+		}
+
+		// rewrite host only if value is invalid/non-compliant
+		if rewriteHost == "2" {
+			// rfc is defined as: host [ ":" port ]
+			// crude checking, could definitely be made more robust
+			if strings.Contains(req.Host, "/") {
+				req.Header.Set("X-Forwarded-Host", req.Host)
+				req.URL.Host = rewriteHostHostname
+				req.Host = rewriteHostHostname
+			}
 		}
 	}
 
 	var dialer func() (net.Conn, error)
 
 	switch network {
-	case "unix":
-		dialer = func() (net.Conn, error) {
-			return net.Dial(network, addr)
-		}
-	case "tcp":
+	case "unix", "tcp", "tcp4", "tcp6":
 		dialer = func() (net.Conn, error) {
 			return net.Dial(network, addr)
 		}
@@ -197,7 +207,7 @@ func run() int {
 				} else {
 					err = WaitForSocket(addr, waitForSocketTimeout)
 				}
-			case "tcp":
+			case "tcp", "tcp4", "tcp6":
 				err = WaitForDial(network, addr, waitForSocketTimeout)
 			case "npipe":
 				err = WaitForFile(addr, waitForSocketTimeout)
@@ -223,7 +233,7 @@ func run() int {
 				os.Remove(addr)
 			}
 			listener, err = net.Listen(network, addr)
-		case "tcp":
+		case "tcp", "tcp4", "tcp6":
 			server.Addr = addr
 			listener, err = net.Listen(network, addr)
 		case "npipe":
