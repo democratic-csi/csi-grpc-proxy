@@ -26,17 +26,28 @@ required environment vars:
   - `npipe:////./pipe/foo`
   - `tcp://localhost:5216`
   - `tcp://0.0.0.0:5216`
+  - `tcp://:5216`
 - `PROXY_TO`: sets the upstream proxy as http or UDS address
   - `unix:///path/to/socket`
   - `npipe:////./pipe/csi.sock`
   - `tcp://localhost:5216`
 - `REWRITE_HOST`: enables host header rewriting (primary purpose of the proxy)
-  - `1`: enabled, default
   - `0`: disabled
+  - `1`: enabled, default, unconditionally rewrites host value to
+    `REWRITE_HOST_HOSTNAME`
+  - `2`: enabled, conditionally rewrites host value to `REWRITE_HOST_HOSTNAME`
+    only if the original value is non-compliant
+- `REWRITE_HOST_HOSTNAME`: what hostname to use for the rewrite
+  - `localhost`: default, compliant values are `host[:port]`
 - `PROXY_TO_INITIAL_TIMEOUT`: how long (seconds) to wait for the upstream proxy
-  to be available
+  to be available (binding happens _after_ this and only if the upstream
+  becomes available before the timeout is reached)
+
   - `60`: default
   - `0`: disable
+
+You can review notes here for appropriate `BIND_TO` and `PROXY_TO` syntax
+https://pkg.go.dev/net#Dial
 
 ## docker
 

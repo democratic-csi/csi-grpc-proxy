@@ -95,10 +95,7 @@ func getProxy(network, addr string) *httputil.ReverseProxy {
 	return proxy
 }
 
-func run() int {
-	finished := make(chan bool)
-	var returncode int = 0
-
+func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {
 		//log.Println("inline defer executing")
@@ -180,6 +177,7 @@ func run() int {
 	)
 
 	go func() {
+		var returncode int = 0
 		<-signalChan
 		log.Print("signal caught, shutting down..\n")
 		//log.Printf("server conns %v\n", server.)
@@ -194,7 +192,8 @@ func run() int {
 			returncode = 0
 		}
 
-		finished <- true
+		log.Printf("exiting with exit code %d\n", returncode)
+		os.Exit(returncode)
 	}()
 
 	if waitForSocketTimeout > 0 {
@@ -256,15 +255,8 @@ func run() int {
 		}
 	}(bindToNetwork, bindToAddr)
 
-	<-finished
-
-	return returncode
-}
-
-func main() {
-	code := run()
-	log.Printf("exiting with exit code %d\n", code)
-	os.Exit(code)
+	// block forever
+	select {}
 }
 
 func FileExists(filename string) bool {
