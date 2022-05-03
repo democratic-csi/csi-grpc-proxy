@@ -37,21 +37,47 @@ jobs:
           path: builds/
           retention-days: 7
 
+  determine-image-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            export GIT_TAG=${GITHUB_REF#refs/tags/}
+          else
+            export GIT_BRANCH=${GITHUB_REF#refs/heads/}
+          fi
+
+          if [[ -n "${GIT_TAG}" ]]; then
+            echo "::set-output name=tag::${GIT_TAG}"
+          elif [[ -n "${GIT_BRANCH}" ]]; then
+            if [[ "${GIT_BRANCH}" == "master" ]]; then
+              echo "::set-output name=tag::latest"
+            else
+              echo "::set-output name=tag::${GIT_BRANCH}"
+            fi
+          else
+            :
+          fi
+
   build-docker-linux:
     needs:
       - build-binary
+      - determine-image-tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: builds
           path: builds/
       - name: docker build
         run: |
           pwd
-          ls -l
-          ls -l builds/
+          env
+
           export ARCH=$([ $(uname -m) = "x86_64" ] && echo "amd64" || echo "arm64")
           mkdir -p ~/.docker/cli-plugins/
           wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-${ARCH}
@@ -71,12 +97,11 @@ jobs:
           GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
           DOCKER_CLI_EXPERIMENTAL: enabled
           DOCKER_BUILD_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
+          IMAGE_TAG: ${{needs.determine-image-tag.outputs.tag}}
 
   build-docker-windows:
     needs:
-      - build-binary
-      # require this due to modifying the manifest
-      - build-docker-linux
+      - buildbinary
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -90,7 +115,7 @@ jobs:
           file: Dockerfile.Windows
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: builds
           path: builds/
@@ -105,3 +130,29 @@ jobs:
           name: windows-${{ matrix.base_tag }}.tar
           path: windows-${{ matrix.base_tag }}.tar
           retention-days: 7
+
+
+  push-docker-windows:
+    needs:
+      - build-docker-linux
+      - build-docker-windows
+      - determine-image-tag
+    name: handle windows images using buildah
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: windows-1809.tar
+      - uses: actions/download-artifact@v3
+        with:
+          name: windows-ltsc2022.tar
+      - name: install latest buildah
+        run: |
+          env
+          .github/bin/install_latest_buildah.sh
+          ls -l
+
+          buildah --version
+        env:
+          IMAGE_TAG: ${{needs.determine-image-tag.outputs.tag}}
