@@ -17,6 +17,7 @@ if [[ -n "${IMAGE_TAG}" ]]; then
   
   # all all the existing linux data to the manifest
   buildah manifest add "${MANIFEST_NAME}" --all "docker.io/${DOCKER_REPO}:${IMAGE_TAG}"
+  buildah manifest inspect "${MANIFEST_NAME}"
   
   # import pre-built images
   buildah pull docker-archive:window-1809.tar
@@ -25,6 +26,7 @@ if [[ -n "${IMAGE_TAG}" ]]; then
   # add pre-built images to manifest
   buildah manifest add "${MANIFEST_NAME}" windows:1809
   buildah manifest add "${MANIFEST_NAME}" windows:ltsc2022
+  buildah manifest inspect "${MANIFEST_NAME}"
 
   # push manifest
   buildah manifest push --all "${MANIFEST_NAME}" docker://docker.io/${DOCKER_REPO}:${IMAGE_TAG}

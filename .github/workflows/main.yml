@@ -143,8 +143,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: windows-ltsc2022.tar
-      - name: install latest buildah
+      - name: push windows images with buildah
         run: |
+          env
+          ls -l
           .github/bin/install_latest_buildah.sh
           buildah --version
           .github/bin/docker-release-windows.sh
