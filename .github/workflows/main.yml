@@ -54,7 +54,7 @@ jobs:
           ls -l builds/
           export ARCH=$([ $(uname -m) = "x86_64" ] && echo "amd64" || echo "arm64")
           mkdir -p ~/.docker/cli-plugins/
-          wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-${ARCH}
+          wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-${ARCH}
           chmod a+x ~/.docker/cli-plugins/docker-buildx
           docker info
           docker buildx version
@@ -95,11 +95,13 @@ jobs:
           name: builds
           path: builds/
       - name: docker build
+        shell: bash
         run: |
-          docker build -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} .
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
-          DOCKER_CLI_EXPERIMENTAL: enabled
+          docker build --pull -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} -t windows:${{ matrix.base_tag }} .
+          docker save windows:${{ matrix.base_tag }} -o windows-${{ matrix.base_tag }}.tar
+      - name: upload image tar
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-${{ matrix.base_tag }}.tar
+          path: windows-${{ matrix.base_tag }}.tar
+          retention-days: 7
