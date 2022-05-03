@@ -121,6 +121,7 @@ jobs:
         run: |
           docker info
           docker build --pull -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} -t windows:${{ matrix.base_tag }} .
+          docker inspect windows:${{ matrix.base_tag }}
           docker save windows:${{ matrix.base_tag }} -o windows-${{ matrix.base_tag }}.tar
       - name: upload image tar
         uses: actions/upload-artifact@v2
