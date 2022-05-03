@@ -20,7 +20,7 @@ if [[ -n "${IMAGE_TAG}" ]]; then
   buildah manifest inspect "${MANIFEST_NAME}"
   
   # import pre-built images
-  buildah pull docker-archive:window-1809.tar
+  buildah pull docker-archive:windows-1809.tar
   buildah pull docker-archive:windows-ltsc2022.tar
 
   # add pre-built images to manifest

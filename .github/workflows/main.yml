@@ -145,10 +145,13 @@ jobs:
           name: windows-ltsc2022.tar
       - name: push windows images with buildah
         run: |
-          env
-          ls -l
           .github/bin/install_latest_buildah.sh
-          buildah --version
+          buildah version
           .github/bin/docker-release-windows.sh
         env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
+          DOCKER_CLI_EXPERIMENTAL: enabled
           IMAGE_TAG: ${{needs.determine-image-tag.outputs.tag}}
