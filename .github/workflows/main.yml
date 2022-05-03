@@ -77,7 +77,6 @@ jobs:
         run: |
           pwd
           env
-
           export ARCH=$([ $(uname -m) = "x86_64" ] && echo "amd64" || echo "arm64")
           mkdir -p ~/.docker/cli-plugins/
           wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-${ARCH}
@@ -101,7 +100,7 @@ jobs:
 
   build-docker-windows:
     needs:
-      - buildbinary
+      - build-binary
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
