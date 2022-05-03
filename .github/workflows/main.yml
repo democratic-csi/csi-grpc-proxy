@@ -75,8 +75,6 @@ jobs:
           path: builds/
       - name: docker build
         run: |
-          pwd
-          env
           export ARCH=$([ $(uname -m) = "x86_64" ] && echo "amd64" || echo "arm64")
           mkdir -p ~/.docker/cli-plugins/
           wget -qO ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-${ARCH}
@@ -136,7 +134,6 @@ jobs:
       - build-docker-linux
       - build-docker-windows
       - determine-image-tag
-    name: handle windows images using buildah
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -148,10 +145,8 @@ jobs:
           name: windows-ltsc2022.tar
       - name: install latest buildah
         run: |
-          env
           .github/bin/install_latest_buildah.sh
-          ls -l
-
           buildah --version
+          .github/bin/docker-release-windows.sh
         env:
           IMAGE_TAG: ${{needs.determine-image-tag.outputs.tag}}
