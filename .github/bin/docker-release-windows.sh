@@ -9,10 +9,11 @@ export DOCKER_REPO="${DOCKER_ORG}/${DOCKER_PROJECT}"
 
 export GHCR_REPO="ghcr.io/${GITHUB_REPOSITORY}"
 
-export MANIFEST_NAME="windows"
+export MANIFEST_NAME="windows:${IMAGE_TAG}"
 
 if [[ -n "${IMAGE_TAG}" ]]; then
   # create local manifest to work with
+  buildah manifest rm "${MANIFEST_NAME}" || true
   buildah manifest create "${MANIFEST_NAME}"
   
   # all all the existing linux data to the manifest
@@ -20,17 +21,20 @@ if [[ -n "${IMAGE_TAG}" ]]; then
   buildah manifest inspect "${MANIFEST_NAME}"
   
   # import pre-built images
-  buildah pull docker-archive:windows-1809.tar
-  buildah pull docker-archive:windows-ltsc2022.tar
+  buildah pull docker-archive:windows-${GITHUB_RUN_ID}-1809.tar
+  buildah pull docker-archive:windows-${GITHUB_RUN_ID}-ltsc2022.tar
 
   # add pre-built images to manifest
-  buildah manifest add "${MANIFEST_NAME}" windows:1809
-  buildah manifest add "${MANIFEST_NAME}" windows:ltsc2022
+  buildah manifest add "${MANIFEST_NAME}" windows:${GITHUB_RUN_ID}-1809
+  buildah manifest add "${MANIFEST_NAME}" windows:${GITHUB_RUN_ID}-ltsc2022
   buildah manifest inspect "${MANIFEST_NAME}"
 
   # push manifest
   buildah manifest push --all "${MANIFEST_NAME}" docker://docker.io/${DOCKER_REPO}:${IMAGE_TAG}
   buildah manifest push --all "${MANIFEST_NAME}" docker://${GHCR_REPO}:${IMAGE_TAG}
+
+  # cleanup
+  buildah manifest rm "${MANIFEST_NAME}" || true
 else
   :
 fi

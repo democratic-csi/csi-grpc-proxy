@@ -120,14 +120,14 @@ jobs:
         shell: bash
         run: |
           docker info
-          docker build --pull -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} -t windows:${{ matrix.base_tag }} .
-          docker inspect windows:${{ matrix.base_tag }}
-          docker save windows:${{ matrix.base_tag }} -o windows-${{ matrix.base_tag }}.tar
+          docker build --pull -f ${{ matrix.file }} --build-arg BASE_TAG=${{ matrix.base_tag }} -t windows:${GITHUB_RUN_ID}-${{ matrix.base_tag }} .
+          docker inspect windows:${GITHUB_RUN_ID}-${{ matrix.base_tag }}
+          docker save windows:${GITHUB_RUN_ID}-${{ matrix.base_tag }} -o windows-${GITHUB_RUN_ID}-${{ matrix.base_tag }}.tar
       - name: upload image tar
         uses: actions/upload-artifact@v2
         with:
-          name: windows-${{ matrix.base_tag }}.tar
-          path: windows-${{ matrix.base_tag }}.tar
+          name: windows-${{ env.GITHUB_RUN_ID }}-${{ matrix.base_tag }}.tar
+          path: windows-${{ env.GITHUB_RUN_ID }}-${{ matrix.base_tag }}.tar
           retention-days: 7
 
 
@@ -136,18 +136,20 @@ jobs:
       - build-docker-linux
       - build-docker-windows
       - determine-image-tag
-    runs-on: ubuntu-20.04
+    runs-on:
+      - self-hosted
+      - buildah
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v3
         with:
-          name: windows-1809.tar
+          name: windows-${{ env.GITHUB_RUN_ID }}-1809.tar
       - uses: actions/download-artifact@v3
         with:
-          name: windows-ltsc2022.tar
+          name: windows-${{ env.GITHUB_RUN_ID }}-ltsc2022.tar
       - name: push windows images with buildah
         run: |
-          .github/bin/install_latest_buildah.sh
+          #.github/bin/install_latest_buildah.sh
           buildah version
           .github/bin/docker-release-windows.sh
         env:

@@ -76,7 +76,7 @@ func getProxy(network, addr string) *httputil.ReverseProxy {
 		// So http2.Transport doesn't complain the URL scheme isn't 'https'
 		AllowHTTP: true,
 		// Pretend we are dialing a TLS endpoint. (Note, we ignore the passed tls.Config)
-		DialTLS: func(network, addr string, _ *tls.Config) (net.Conn, error) {
+		DialTLS: func(_, _ string, _ *tls.Config) (net.Conn, error) {
 			log.Printf("Dialing upstream: %s://%s\n", network, addr)
 			return dialer()
 		},
