@@ -9,7 +9,7 @@ export DOCKER_REPO="${DOCKER_ORG}/${DOCKER_PROJECT}"
 
 export GHCR_REPO="ghcr.io/${GITHUB_REPOSITORY}"
 
-export MANIFEST_NAME="windows:${IMAGE_TAG}"
+export MANIFEST_NAME="csi-grpc-proxy-combined:${IMAGE_TAG}"
 
 if [[ -n "${IMAGE_TAG}" ]]; then
   # create local manifest to work with
@@ -21,12 +21,12 @@ if [[ -n "${IMAGE_TAG}" ]]; then
   buildah manifest inspect "${MANIFEST_NAME}"
   
   # import pre-built images
-  buildah pull docker-archive:windows-${GITHUB_RUN_ID}-1809.tar
-  buildah pull docker-archive:windows-${GITHUB_RUN_ID}-ltsc2022.tar
+  buildah pull docker-archive:csi-grpc-proxy-windows-1809.tar
+  buildah pull docker-archive:csi-grpc-proxy-windows-ltsc2022.tar
 
   # add pre-built images to manifest
-  buildah manifest add "${MANIFEST_NAME}" windows:${GITHUB_RUN_ID}-1809
-  buildah manifest add "${MANIFEST_NAME}" windows:${GITHUB_RUN_ID}-ltsc2022
+  buildah manifest add "${MANIFEST_NAME}" csi-grpc-proxy-windows:${GITHUB_RUN_ID}-1809
+  buildah manifest add "${MANIFEST_NAME}" csi-grpc-proxy-windows:${GITHUB_RUN_ID}-ltsc2022
   buildah manifest inspect "${MANIFEST_NAME}"
 
   # push manifest
