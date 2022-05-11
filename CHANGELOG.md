@@ -1,3 +1,17 @@
+# v0.5.0
+
+Released 2022-05-10
+
+- massive overhaul to support various networks
+- updates to better support graceful shutdown
+- npipe support (via `winio`)
+- signal handling
+- windows images
+- allow setting the desired hostname to use for the rewrite
+- allow for disabling the hostname rewrite altogether
+- allow for conditional hostname rewrites if the hostname appears to be
+  non-compliant
+
 # v0.4.2
 
 Released 2022-04-05
