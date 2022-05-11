@@ -15,5 +15,6 @@ FROM mcr.microsoft.com/windows/nanoserver:${BASE_TAG}
 
 LABEL org.opencontainers.image.source https://github.com/democratic-csi/csi-grpc-proxy
 
-COPY builds/csi-grpc-proxy-docker-image-build-windows-amd64.exe C:/bin/csi-grpc-proxy.exe
-CMD c:\\bin\\csi-grpc-proxy.exe
+COPY builds/csi-grpc-proxy-docker-image-build-windows-amd64.exe C:/app/csi-grpc-proxy.exe
+WORKDIR /app
+CMD csi-grpc-proxy.exe

@@ -1,5 +1,6 @@
 # local testing
 # docker build --pull -t foobar --build-arg TARGETPLATFORM="linux/amd64" .
+# docker run --rm -ti foobar
 
 FROM alpine:3.15 as builder
 
