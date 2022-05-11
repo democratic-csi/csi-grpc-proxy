@@ -2,8 +2,8 @@
 
 set -e
 
-echo "$DOCKER_PASSWORD" | podman login docker.io -u "$DOCKER_USERNAME" --password-stdin
-echo "$GHCR_PASSWORD"   | podman login ghcr.io   -u "$GHCR_USERNAME"   --password-stdin
+echo "$DOCKER_PASSWORD" | docker login docker.io -u "$DOCKER_USERNAME" --password-stdin
+echo "$GHCR_PASSWORD"   | docker login ghcr.io   -u "$GHCR_USERNAME"   --password-stdin
 
 export DOCKER_ORG="democraticcsi"
 export DOCKER_PROJECT="csi-grpc-proxy"
