@@ -1,3 +1,9 @@
+# v0.5.1
+
+Released 2022-05-11
+
+- support host-process semantics for the windows container image
+
 # v0.5.0
 
 Released 2022-05-10
