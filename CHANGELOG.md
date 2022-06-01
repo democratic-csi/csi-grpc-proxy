@@ -1,3 +1,10 @@
+# v0.5.3
+
+Released 2022-06-01
+
+- indescriminately delete uds files on startup on windows due to bug
+  https://github.com/golang/go/issues/33357
+
 # v0.5.2
 
 Released 2022-05-12
