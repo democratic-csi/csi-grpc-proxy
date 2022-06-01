@@ -227,10 +227,18 @@ func main() {
 		var listener net.Listener
 		switch network {
 		case "unix":
-			if IsSocket(addr) {
+			if runtime.GOOS == "windows" {
+				// uds stat on windows just flat out fails, indescriminately delete here and ignore errors
+				// https://github.com/golang/go/issues/33357
 				log.Printf("removing existing listen socket %s\n", addr)
 				os.Remove(addr)
+			} else {
+				if IsSocket(addr) {
+					log.Printf("removing existing listen socket %s\n", addr)
+					os.Remove(addr)
+				}
 			}
+
 			listener, err = net.Listen(network, addr)
 		case "tcp", "tcp4", "tcp6":
 			server.Addr = addr
