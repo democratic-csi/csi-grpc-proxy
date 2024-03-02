@@ -1,3 +1,9 @@
+# v0.5.4
+
+Released 2024-03-03
+
+- bump alpine image for containers
+
 # v0.5.3
 
 Released 2022-06-01
