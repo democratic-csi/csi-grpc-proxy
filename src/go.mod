@@ -3,11 +3,13 @@ module csi-grpc-proxy
 go 1.18
 
 require (
-	github.com/Microsoft/go-winio v0.5.2
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	github.com/Microsoft/go-winio v0.6.1
+	golang.org/x/net v0.22.0
 )
 
 require (
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/mod v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/tools v0.19.0 // indirect
 )
