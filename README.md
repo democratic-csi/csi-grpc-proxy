@@ -70,6 +70,10 @@ BIND_TO="unix:///tmp/csi.sock" PROXY_TO="unix:///tmp/csi.sock.internal" go run .
 # add dep
 go get github.com/Microsoft/go-winio
 
+# bump deps
+go get -u
+go mod tidy
+
 # format
 go fmt ./
 
