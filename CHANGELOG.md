@@ -1,3 +1,9 @@
+# v0.5.5
+
+Released 2024-03-15
+
+- bump deps, go version
+
 # v0.5.4
 
 Released 2024-03-03
