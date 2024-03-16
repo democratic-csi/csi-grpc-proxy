@@ -1,3 +1,9 @@
+# v0.5.6
+
+Released 2024-03-15
+
+- update go version for `go.mod`
+
 # v0.5.5
 
 Released 2024-03-15
