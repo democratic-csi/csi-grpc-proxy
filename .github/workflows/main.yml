@@ -31,7 +31,7 @@ jobs:
         env:
           BINARY_VERSION: docker-image-build
       - name: upload builds
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: builds
           path: builds/
@@ -124,7 +124,7 @@ jobs:
           docker inspect csi-grpc-proxy-windows:${GITHUB_RUN_ID}-${{ matrix.base_tag }}
           docker save csi-grpc-proxy-windows:${GITHUB_RUN_ID}-${{ matrix.base_tag }} -o csi-grpc-proxy-windows-${{ matrix.base_tag }}.tar
       - name: upload image tar
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: csi-grpc-proxy-windows-${{ matrix.base_tag }}.tar
           path: csi-grpc-proxy-windows-${{ matrix.base_tag }}.tar
