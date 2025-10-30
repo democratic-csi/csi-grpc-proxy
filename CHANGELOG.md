@@ -1,3 +1,11 @@
+# v0.5.7
+
+Released 2025-10-30
+
+- update go version to `1.25`
+- drop windows-2019 support
+- add windows-2025 support
+
 # v0.5.6
 
 Released 2024-03-15

@@ -85,6 +85,7 @@ GOOS=linux GOARCH=arm64 go build -o csi-grpc-proxy
 
 # upgrade go version
 go mod edit -go 1.18
+
 # edit Dockerfile as appropriate
 # edit github-release.yaml as appropriate
 ```
